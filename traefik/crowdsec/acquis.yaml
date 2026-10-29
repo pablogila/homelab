@@ -1,0 +1,13 @@
+source: docker
+container_name:
+  - traefik
+labels:
+  type: traefik
+---
+# Supervise Authelia logs and ban bruteforce access. Activate it with:
+# sudo docker exec crowdsec cscli collections install LePresidente/authelia
+source: docker
+container_name:
+  - authelia
+labels:
+  type: authelia

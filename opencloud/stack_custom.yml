@@ -1,0 +1,74 @@
+---
+
+# This compose contains the custom settings for OpenCloud
+# so that a unified compose can be created to be used in Portainer,
+# by running `source stack_compose.sh`
+
+services:
+
+  opencloud:
+    container_name: opencloud
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.opencloud.loadbalancer.server.port=9200
+      - traefik.http.routers.opencloud.rule=Host(`${OC_DOMAIN}`)
+      - traefik.http.routers.opencloud.service=opencloud
+      - traefik.http.routers.opencloud.entrypoints=websecure
+      - traefik.http.routers.opencloud.tls=true
+      - traefik.http.routers.opencloud.tls.certresolver=home
+    networks:
+      proxy: {}
+    environment:
+      OC_ADD_RUN_SERVICES: antivirus,notifications
+      OC_DEFAULT_LANGUAGE: es
+      OC_INSECURE: false
+      OC_PASSWORD_POLICY_BANNED_PASSWORDS_LIST: ""
+      OC_PASSWORD_POLICY_DISABLED: false
+      OC_PASSWORD_POLICY_MIN_CHARACTERS: 12
+      OC_PASSWORD_POLICY_MIN_DIGITS: 1
+      OC_PASSWORD_POLICY_MIN_LOWERCASE_CHARACTERS: 1
+      OC_PASSWORD_POLICY_MIN_SPECIAL_CHARACTERS: 1
+      OC_PASSWORD_POLICY_MIN_UPPERCASE_CHARACTERS: 1
+      OC_SHARING_PUBLIC_SHARE_MUST_HAVE_PASSWORD: true
+      OC_SHARING_PUBLIC_WRITEABLE_SHARE_MUST_HAVE_PASSWORD: true
+      OCM_ENABLED: "false"
+      OCM_PROVIDER_ENABLED: "false"
+    volumes:
+      - type: bind
+        source: ${OPENCLOUD_GIT_DIR}/config/opencloud/banned-password-list.txt
+        target: /etc/opencloud/banned-password-list.txt
+        bind: {}
+      - type: bind
+        source: ${OPENCLOUD_GIT_DIR}/config/opencloud/csp.yaml
+        target: /etc/opencloud/csp.yaml
+        bind: {}
+      - type: bind
+        source: ${OPENCLOUD_GIT_DIR}/config/opencloud/apps
+        target: /var/lib/opencloud/web/assets/apps
+        bind: {}
+      - type: bind
+        source: ${OPENCLOUD_GIT_DIR}/config/opencloud/apps.yaml
+        target: /etc/opencloud/apps.yaml
+        bind: {}
+
+  clamav:
+    container_name: clamav
+    restart: unless-stopped
+
+  tika:
+    container_name: tika
+    restart: unless-stopped
+
+networks:
+  opencloud-net:
+    name: opencloud-compose_opencloud-net
+  proxy:
+    external: true
+
+volumes:
+  clamav-db:
+    name: opencloud-compose_clamav-db
+  clamav-socket:
+    name: opencloud-compose_clamav-socket

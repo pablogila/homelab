@@ -1,0 +1,12 @@
+
+Update the git repo, both here:
+`./_opencloud-compose/`
+and in `YOUR-SERVER-SERVICES/opencloud/_opencloud-compose/`
+
+Check and modify the custom parameters & passwords for OpenCloud at:
+`stack_custom.yml`
+
+And run here:
+`source stack_compose.sh`
+
+Copy the resulting `opencloud-compose_DATE.yml` to the Portainer stack, and deploy!

@@ -1,0 +1,49 @@
+services:
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest  
+    restart: unless-stopped
+    environment:
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_CONTEXT_LENGTH=131072
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ${SERVICE_DIR}/ollama:/root/.ollama
+    networks:
+      - proxy
+
+  openwebui:
+    container_name: openwebui
+    image: ghcr.io/open-webui/open-webui:main
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - ENABLE_OAUTH_PERSISTENT_CONFIG=true
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.openwebui.loadbalancer.server.port=8080
+      - traefik.http.routers.openwebui.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.openwebui.service=openwebui
+      - traefik.http.routers.openwebui.entrypoints=websecure
+      - traefik.http.routers.openwebui.tls=true
+      - traefik.http.routers.openwebui.tls.certresolver=home
+    volumes:
+      - ${SERVICE_DIR}/openwebui:/app/backend/data
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

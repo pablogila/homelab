@@ -1,0 +1,26 @@
+services:
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: always
+    volumes:
+      - ${SERVICE_DIR_AUTHELIA}:/config
+    environment:
+      - TZ=Europe/Madrid
+      - X_AUTHELIA_CONFIG_FILTERS=template
+    env_file:
+      - stack.env
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.authelia.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.authelia.entrypoints=websecure
+      - traefik.http.routers.authelia.tls=true
+      - traefik.http.routers.authelia.tls.certresolver=home
+      - traefik.http.services.authelia.loadbalancer.server.port=9091
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,17 @@
+# The IPs followed by a comment tag are updated automatically
+# with the update_whitelist.sh script
+# You can include as many IPs as you want,
+# just make sure to configure them also in update_whitelist.conf
+name: my-whitelist
+description: "Automatic whitelist my IPs"
+whitelist:
+  reason: "Avoid accidental bans from my own IPs"
+  ip:
+    - "127.0.0.1"
+    - "::1"
+    - "1.2.3.4"  # testip1  2026-03-07_16:39:00_CET
+    - "5.6.7.8"  # testip2  2026-04-08_14:54:00_CET
+  cidr:
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
