@@ -1,0 +1,129 @@
+services:
+
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    command:
+      - --log.level=DEBUG
+      - --accesslog=true
+      - --global.checkNewVersion=false
+      - --global.sendAnonymousUsage=false
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - --entryPoints.web.address=:80
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.websecure.address=:443
+      - --entryPoints.websecure.forwardedHeaders.trustedIPs=127.0.0.1/32,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+      ########## FREEDNS
+      - --certificatesResolvers.home.acme.email=${ACME_EMAIL}
+      - --certificatesResolvers.home.acme.storage=/var/traefik/certs/acme_home.json
+      - --certificatesResolvers.home.acme.httpChallenge.entryPoint=web
+      # Use the staging acme server for testing, switch to production once everything is ready 
+      #- --certificatesResolvers.home.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesResolvers.home.acme.caServer=https://acme-v02.api.letsencrypt.org/directory
+      ########## DUCKDNS
+      - --certificatesResolvers.duckdns.acme.email=${ACME_EMAIL}
+      - --certificatesResolvers.duckdns.acme.storage=/var/traefik/certs/acme_duckdns.json
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.provider=duckdns
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.propagation.disableChecks=true
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.propagation.delayBeforeChecks=90s
+      # Use the staging acme server for testing, switch to production once everything is ready 
+      #- --certificatesResolvers.duckdns.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesResolvers.duckdns.acme.caServer=https://acme-v02.api.letsencrypt.org/directory
+      ########## Traefik crowdsec-bouncer plugin
+      - --entryPoints.web.http.middlewares=crowdsec-bouncer@docker
+      - --entryPoints.websecure.http.middlewares=crowdsec-bouncer@docker
+      - --experimental.plugins.bouncer.moduleName=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      - --experimental.plugins.bouncer.version=${CROWDSEC_BOUNCER_PLUGIN_VERSION}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      # Dummy router to make sure Traefik loads the labels
+      - traefik.http.routers.dummy.rule=Host(`localhost`)
+      - traefik.http.routers.dummy.service=noop@internal
+      - traefik.http.routers.dummy.middlewares=crowdsec-bouncer@docker
+      # Middleware configuration for the crowdsec-bouncer Traefik plugin
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.enabled=true
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecMode=stream
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecLapiScheme=http
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecLapiHost=crowdsec:8080
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecLapiKey=${CROWDSEC_BOUNCER_API_KEY}
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.ClientTrustedIPs=192.168.0.0/16,10.0.0.0/8
+      # Retry until the crowdsec container is running
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecLapiRetryCount=10
+      - traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CrowdsecLapiRetryWait=5s
+      # Captcha
+      #- traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CaptchaProvider=turnstile
+      #- traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CaptchaSiteKey=${CAPTCHA_SITE_KEY}
+      #- traefik.http.middlewares.crowdsec-bouncer.plugin.bouncer.CaptchaSecretKey=${CAPTCHA_SECRET_KEY}
+      ########## Authelia
+      # Lock simple non-OAuth dashboards with Authelia by including this middleware in their labels:
+      # - traefik.http.routers.[service].middlewares=authelia@docker
+      - traefik.http.middlewares.authelia.forwardauth.address=${AUTHELIA_FORWARD_URL}
+      - traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email
+    environment:
+      - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - proxy
+      - default
+    volumes:
+      - traefik-certs:/var/traefik/certs
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - socket-proxy
+      - crowdsec
+
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: socket-proxy
+    restart: always
+    environment:
+      - CONTAINERS=1
+      - SERVICES=1
+      - NETWORKS=1
+      - EVENTS=1
+      - INFO=1
+      - LOGS=1
+    networks:
+      - default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    restart: always
+    environment:
+      GID: 1000
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
+      DOCKER_HOST: tcp://socket-proxy:2375
+    networks:
+      - default
+    volumes:
+      - ${SERVICE_DIR_TRAEFIK}/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ${SERVICE_DIR_TRAEFIK}/crowdsec/whitelist.yaml:/etc/crowdsec/parsers/s02-enrich/whitelist.yaml:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+      - crowdsec-config:/etc/crowdsec/
+      - ${SERVICE_DIR_TRAEFIK}/crowdsec/scenario-bf.yml:/etc/crowdsec/scenarios/scenario-bf.yml:ro
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "cscli", "version"]
+
+volumes:
+  traefik-certs:
+  crowdsec-db:
+  crowdsec-config:
+
+networks:
+  proxy:
+    external: true

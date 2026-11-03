@@ -1,0 +1,31 @@
+# Filter POST requests returning 400, 401, or 403 on authentication endpoints
+# for native logins, such as Immich, OpenCloud, Open-WebUI, etc.
+# Save under crowdsec/scenarios/ and reload to check it is loaded:
+# sudo docker restart crowdsec
+# sudo docker exec crowdsec cscli scenarios list
+type: leaky
+name: gila/bruteforce
+description: "Detects and blocks brute-force attacks on native logins via Traefik logs"
+filter: |
+  evt.Meta.log_type == 'http_access-log' &&
+  evt.Parsed.method == 'POST' &&
+  evt.Parsed.status in ['400', '401', '403'] &&
+  (evt.Parsed.request contains '/login' ||
+   evt.Parsed.request contains '/auth/login' ||
+   evt.Parsed.request contains '/signin/v1/identifier' ||
+   evt.Parsed.request contains '/api/v1/auths/signin' ||
+   evt.Parsed.request contains '/api/auth/login' ||
+   evt.Parsed.request contains '/api/generate'||
+   evt.Parsed.request contains '/api/chat'||
+   evt.Parsed.request contains '/api/models')
+groupby: "evt.Meta.source_ip"
+# Number of failed attempts before triggering a ban
+capacity: 10
+# Rate at which the bucket drains (forgives one strike every X minutes)
+leakspeed: "5m"
+# Ignore further logs from this IP for X minutes after ban is triggered to save CPU
+blackhole: "10m"
+labels:
+  service: http
+  type: bruteforce
+  remediation: true
