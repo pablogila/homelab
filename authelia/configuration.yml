@@ -26,9 +26,13 @@ access_control:
   rules:
     - domain: '{{ env "WEB_URL_AI" }}'
       resources:
-        - "^/v1/.*$"     # Bypasses OpenAI-compatible API routes
-        - "^/readyz$"    # Bypasses the Docker healthcheck route
-      policy: bypass     # Let this traffic through without an Authelia login
+        - "^/readyz$"  # Bypasses the Docker healthcheck route
+        - "^/api/chat/"
+        - "^/api/message"
+        - "^/api/v1/messages"
+        - "^/api/models"
+        - "^/ollama/"
+      policy: bypass  # Let this traffic through without an Authelia login
     - domain:
         - '*.{{ env "WEB_URL_DOMAIN" }}'
         - '{{ env "WEB_URL" }}'

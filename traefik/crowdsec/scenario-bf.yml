@@ -15,9 +15,11 @@ filter: |
    evt.Parsed.request contains '/signin/v1/identifier' ||
    evt.Parsed.request contains '/api/v1/auths/signin' ||
    evt.Parsed.request contains '/api/auth/login' ||
-   evt.Parsed.request contains '/api/generate'||
-   evt.Parsed.request contains '/api/chat'||
-   evt.Parsed.request contains '/api/models')
+   evt.Parsed.request contains '/api/generate' ||
+   evt.Parsed.request contains '/api/chat' ||
+   evt.Parsed.request contains '/api/message' ||
+   evt.Parsed.request contains '/api/models' ||
+   evt.Parsed.request contains '/ollama/v1/')
 groupby: "evt.Meta.source_ip"
 # Number of failed attempts before triggering a ban
 capacity: 10
