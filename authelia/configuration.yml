@@ -27,11 +27,11 @@ access_control:
     - domain: '{{ env "WEB_URL_AI" }}'
       resources:
         - "^/readyz$"  # Bypasses the Docker healthcheck route
-        - "^/api/chat/"
+        - "^/api/chat"
         - "^/api/message"
         - "^/api/v1/messages"
         - "^/api/models"
-        - "^/ollama/"
+        - "^/ollama"
       policy: bypass  # Let this traffic through without an Authelia login
     - domain:
         - '*.{{ env "WEB_URL_DOMAIN" }}'

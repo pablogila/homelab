@@ -20,7 +20,7 @@ filter: |
    evt.Parsed.request contains '/api/message' ||
    evt.Parsed.request contains '/api/models' ||
    evt.Parsed.request contains '/v1/messages' ||
-   evt.Parsed.request contains '/ollama/v1/')
+   evt.Parsed.request contains '/ollama')
 groupby: "evt.Meta.source_ip"
 # Number of failed attempts before triggering a ban
 capacity: 10
