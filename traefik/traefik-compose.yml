@@ -67,6 +67,7 @@ services:
       - traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true
       - traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email
     environment:
+      - TZ=Europe/Madrid
       - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
     ports:
       - "80:80"
@@ -87,6 +88,7 @@ services:
     container_name: socket-proxy
     restart: always
     environment:
+      - TZ=Europe/Madrid
       - CONTAINERS=1
       - SERVICES=1
       - NETWORKS=1
@@ -103,9 +105,10 @@ services:
     container_name: crowdsec
     restart: always
     environment:
-      GID: 1000
-      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
-      DOCKER_HOST: tcp://socket-proxy:2375
+      - TZ=Europe/Madrid
+      - GID=1000
+      - COLLECTIONS=crowdsecurity/linux crowdsecurity/traefik
+      - DOCKER_HOST=tcp://socket-proxy:2375
     networks:
       - default
     volumes:

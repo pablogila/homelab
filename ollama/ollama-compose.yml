@@ -5,6 +5,7 @@ services:
     image: ollama/ollama:latest  
     restart: unless-stopped
     environment:
+      - TZ=Europe/Madrid
       - OLLAMA_FLASH_ATTENTION=1
       - OLLAMA_KV_CACHE_TYPE=q8_0
       - OLLAMA_KEEP_ALIVE=8h
@@ -17,9 +18,9 @@ services:
               count: 1
               capabilities: [gpu]
     volumes:
-      - ${SERVICE_DIR_OLLAMA}/ollama:/root/.ollama
+      - ${SERVICE_DIR}/ollama:/root/.ollama
     networks:
-      - proxy
+      - ai-backend
 
   openwebui:
     container_name: openwebui
@@ -28,6 +29,7 @@ services:
     depends_on:
       - ollama
     environment:
+      - TZ=Europe/Madrid
       - OLLAMA_BASE_URL=http://ollama:11434
       - OAUTH_MERGE_ACCOUNTS_BY_EMAIL=true
     env_file:
@@ -36,16 +38,19 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       - traefik.http.services.openwebui.loadbalancer.server.port=8080
-      - traefik.http.routers.openwebui.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.openwebui.rule=Host(`${WEB_URL_OPENWEBUI}`)
       - traefik.http.routers.openwebui.service=openwebui
       - traefik.http.routers.openwebui.entrypoints=websecure
       - traefik.http.routers.openwebui.tls=true
       - traefik.http.routers.openwebui.tls.certresolver=home
     volumes:
-      - ${SERVICE_DIR_OLLAMA}/openwebui:/app/backend/data
+      - ${SERVICE_DIR}/openwebui:/app/backend/data
     networks:
       - proxy
+      - ai-backend
 
 networks:
   proxy:
+    external: true
+  ai-backend:
     external: true

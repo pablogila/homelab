@@ -24,7 +24,7 @@ password_policy:
 access_control:
   default_policy: deny
   rules:
-    - domain: '{{ env "WEB_URL_AI" }}'
+    - domain: '{{ env "WEB_URL_OPENWEBUI" }}'
       resources:
         - "^/readyz$"  # Bypasses the Docker healthcheck route
         - "^/api/chat"
@@ -35,7 +35,7 @@ access_control:
       policy: bypass  # Let this traffic through without an Authelia login
     - domain:
         - '*.{{ env "WEB_URL_DOMAIN" }}'
-        - '{{ env "WEB_URL" }}'
+        - '{{ env "WEB_URL_AUTHELIA" }}'
       policy: one_factor
 
 session:
@@ -44,7 +44,7 @@ session:
   inactivity: 600
   cookies:
     - domain: '{{ env "WEB_URL_DOMAIN" }}'
-      authelia_url: 'https://{{ env "WEB_URL" }}'
+      authelia_url: 'https://{{ env "WEB_URL_AUTHELIA" }}'
 
 # Configure CrowdSec's acquis.yaml file with Authelia, and enable the plugin to supervise the logs:
 # sudo docker exec crowdsec cscli collections install LePresidente/authelia
@@ -73,7 +73,7 @@ identity_providers:
       allowed_origins:
         - 'https://{{ env "WEB_URL_IMMICH" }}'
         - 'https://{{ env "WEB_URL_CALIBRE" }}'
-        - 'https://{{ env "WEB_URL_AI" }}'
+        - 'https://{{ env "WEB_URL_OPENWEBUI" }}'
       allowed_origins_from_client_redirect_uris: true
     jwks:
       ##### GENERATE the RSA key with:
@@ -120,13 +120,13 @@ identity_providers:
 
       - client_id: 'openwebui'
         client_name: 'OpenWebUI'
-        client_secret: '{{ env "SECRET_AI" }}'
+        client_secret: '{{ env "SECRET_OPENWEBUI" }}'
         token_endpoint_auth_method: 'client_secret_basic'
         public: false
         authorization_policy: one_factor
         consent_mode: implicit
         redirect_uris:
-          - 'https://{{ env "WEB_URL_AI" }}/oauth/oidc/callback'
+          - 'https://{{ env "WEB_URL_OPENWEBUI" }}/oauth/oidc/callback'
         scopes:
           - 'openid'
           - 'profile'

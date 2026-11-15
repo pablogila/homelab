@@ -17,7 +17,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       - traefik.http.services.immich.loadbalancer.server.port=2283
-      - traefik.http.routers.immich.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.immich.rule=Host(`${WEB_URL_IMMICH}`)
       - traefik.http.routers.immich.service=immich
       - traefik.http.routers.immich.entrypoints=websecure
       - traefik.http.routers.immich.tls=true
@@ -41,14 +41,13 @@ services:
       # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
-    env_file:
-      - stack.env
+    env_file: stack.env
     #ports:
     #  - '2283:2283'
     depends_on:
       - redis
       - database
-    restart: always
+    restart: unless-stopped
     healthcheck:
       disable: false
     networks:
@@ -78,9 +77,8 @@ services:
     #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
     volumes:
       - model-cache:/cache
-    env_file:
-      - stack.env
-    restart: always
+    env_file: stack.env
+    restart: unless-stopped
     healthcheck:
       disable: false
     networks:
@@ -91,7 +89,7 @@ services:
     image: docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
     healthcheck:
       test: redis-cli ping | grep -q PONG || exit 1
-    restart: always
+    restart: unless-stopped
     networks:
       - default
 
@@ -109,7 +107,7 @@ services:
       # Do not edit the next line. If you want to change the database storage location on your system, edit the value of DB_DATA_LOCATION in the .env file
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     shm_size: 128mb
-    restart: always
+    restart: unless-stopped
     networks:
       - default
 
@@ -119,5 +117,3 @@ volumes:
 networks:
   proxy:
     external: true
-  default:
-    external: false

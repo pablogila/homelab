@@ -12,7 +12,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       - traefik.http.services.calibre.loadbalancer.server.port=8083
-      - traefik.http.routers.calibre.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.calibre.rule=Host(`${WEB_URL_CALIBRE}`)
       - traefik.http.routers.calibre.service=calibre
       - traefik.http.routers.calibre.entrypoints=websecure
       - traefik.http.routers.calibre.tls=true
@@ -47,11 +47,7 @@ services:
     #   - NET_BIND_SERVICE
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      disable: true
 
 ########## CUSTOM NETWORK
     networks:

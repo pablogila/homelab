@@ -16,7 +16,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
-      - traefik.http.routers.authelia.rule=Host(`${WEB_URL}`)
+      - traefik.http.routers.authelia.rule=Host(`${WEB_URL_AUTHELIA}`)
       - traefik.http.routers.authelia.entrypoints=websecure
       - traefik.http.routers.authelia.tls=true
       - traefik.http.routers.authelia.tls.certresolver=home
