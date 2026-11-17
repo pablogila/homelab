@@ -10,6 +10,10 @@ services:
       - OLLAMA_KV_CACHE_TYPE=q8_0
       - OLLAMA_KEEP_ALIVE=8h
       - OLLAMA_CONTEXT_LENGTH=131072
+    volumes:
+      - ${SERVICE_DIR}/ollama:/root/.ollama
+    networks:
+      - ai-backend
     deploy:
       resources:
         reservations:
@@ -17,10 +21,9 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    volumes:
-      - ${SERVICE_DIR}/ollama:/root/.ollama
-    networks:
-      - ai-backend
+        limits:
+          memory: 20G
+          cpus: "2.0"
 
   openwebui:
     container_name: openwebui
@@ -48,6 +51,11 @@ services:
     networks:
       - proxy
       - ai-backend
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: "2.0"
 
 networks:
   proxy:

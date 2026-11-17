@@ -1,0 +1,12 @@
+model:
+  default: "${HERMES_MODEL_NAME}"
+  context_length: ${HERMES_CONTEXT_LENGTH}
+  provider: "openwebui"
+providers:
+  openwebui:
+    base_url: "http://openwebui:8080/api/v1"
+    key_env: OPENWEBUI_API_KEY
+delegation:
+  max_concurrent: 1
+kanban:
+  max_in_progress: 1
