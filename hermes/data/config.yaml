@@ -1,12 +1,17 @@
 model:
-  default: "${HERMES_MODEL_NAME}"
+  default: ${HERMES_MODEL_NAME}
   context_length: ${HERMES_CONTEXT_LENGTH}
-  provider: "openwebui"
+  provider: openwebui
 providers:
   openwebui:
-    base_url: "http://openwebui:8080/api/v1"
+    base_url: http://openwebui:8080/api/v1
     key_env: OPENWEBUI_API_KEY
 delegation:
-  max_concurrent: 1
-kanban:
-  max_in_progress: 1
+  max_concurrent_children:
+  gateway_mode: inline
+  max_iterations: 50
+agent:
+  disabled_toolsets:
+    - computer_use
+    - image_gen
+    - tts
